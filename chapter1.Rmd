@@ -2,3 +2,8 @@
 # About the project
 
 *Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you can use R Markdown syntax.*
+
+Hello, I am Nea. I am a 3rd year PhD student in Doctoral Programme in Molecular Medicine. I recently started to learn coding with Python to automate some data analysis workflows. I also got tired of using licensed software like Prism only at the university to make graphs and I was not happy with the limited options in these softwares. I attended this course to learn also R which is more used in biomedicine than Python and I wish to develop bioinformatics skills to benefit from data more.
+
+##Link to my repository:
+<https://github.com/neabister/IODS-project>
