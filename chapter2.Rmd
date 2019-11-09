@@ -28,3 +28,18 @@ str(data)
   
 *Data contains 7 variables (columns) from 166 observations (students, rows). All variables are numeric or integers except gender which has 2 factors (female or male).*  
 
+###Graphical overview of the data  
+
+```{r}
+library(ggplot2)
+library(GGally)
+
+p <- ggpairs(data, mapping = aes(col = gender, alpha = 0.4), lower = list(combo = wrap('facethist', bins = 20)))
+# add a main title and draw the plot
+p <- p + ggtitle('Summary graphs')
+p
+
+```
+
+*Data contains more females than males but other variables are not dependent on gender. Gender independent **highest (positive) correlation is between points and attitude** (0.437) and **lowest (negative) correlation between points and deep learning approaches** (-0.0101). This could suggest that exams do not measure level of deep learning. However, points correlate best with strategic approaches (positive correlation), suggesting that focus on planning and scheduling could improve exam points.*
+

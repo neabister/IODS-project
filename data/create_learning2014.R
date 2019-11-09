@@ -17,11 +17,22 @@ str(data)
 data_with_points <- filter(data, Points != 0)
 
 #Scale attitude (division by 10) although it was not clearly instructed in the exercise but in example wrangled data it seems to be so...
-data_with_points$attitude_scaled = data_with_points$Attitude / 10
+data_with_points$attitude = data_with_points$Attitude / 10
 
-#Create new analysis dataset df
-analysis_dataset <- data.frame('gender' = data_with_points$gender, 'age' = data_with_points$Age, 'attitude' = data_with_points$attitude_scaled, 
-                               'points' = data_with_points$Points)
+#Create new analysis dataset df that contains only gender, age, attitude and points
+
+keep_columns <- c('gender', 'Age', 'attitude', 'Points')
+analysis_dataset <- select(data_with_points, one_of(keep_columns))
+
+#Change all column names to lower case
+colnames_lower <- c()
+
+for(i in colnames(analysis_dataset)) {
+  lower_case <- tolower(i)
+  colnames_lower <- c(colnames_lower, lower_case)
+}
+
+colnames(analysis_dataset) <- colnames_lower
 
 
 #Group questions to deep, stra and surf
