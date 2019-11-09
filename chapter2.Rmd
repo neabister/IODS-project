@@ -3,7 +3,7 @@
 In this exercise I analyze preprocessed data.  
 
 ###Link to preprocessing R script:  
-<https://github.com/neabister/IODS-project/data/create_learning2014R>
+<https://github.com/neabister/IODS-project/blob/master/data/create_learning2014.R>
   
 ###Link to original data:  
 
