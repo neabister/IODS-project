@@ -187,7 +187,7 @@ summary {
 <li><a href="#about-the-project">About the project</a><ul>
 <li><a href="#link-to-my-repository">Link to my repository:</a></li>
 </ul></li>
-<li><a href="#insert-chapter-2-title-here">Insert chapter 2 title here</a></li>
+<li><a href="#chapter-2-regression-and-model-validation">Chapter 2: Regression and model validation</a></li>
 </ul>
 </div>
 
@@ -202,15 +202,50 @@ summary {
 <hr />
 </div>
 </div>
-<div id="insert-chapter-2-title-here" class="section level1">
-<h1>Insert chapter 2 title here</h1>
-<p><em>Describe the work you have done this week and summarize your learning.</em></p>
-<ul>
-<li>Describe your work and results clearly.</li>
-<li>Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.</li>
-<li>Assume the reader has no previous knowledge of your data or the more advanced methods you are using.</li>
-</ul>
+<div id="chapter-2-regression-and-model-validation" class="section level1">
+<h1>Chapter 2: Regression and model validation</h1>
+<p>In this exercise I analyze preprocessed data.</p>
+<div id="link-to-preprocessing-r-script" class="section level3">
+<h3>Link to preprocessing R script:</h3>
+<p><a href="https://github.com/neabister/IODS-project/data/create_learning2014R" class="uri">https://github.com/neabister/IODS-project/data/create_learning2014R</a></p>
+</div>
+<div id="link-to-original-data" class="section level3">
+<h3>Link to original data:</h3>
+<p><a href="http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt" class="uri">http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt</a></p>
+</div>
+<div id="original-data-and-preprocessing" class="section level3">
+<h3>Original data and preprocessing</h3>
+<p>Data is from Introduction to statistics course learning approaches study carried out in Helsinki 2014 and it is a part of multinational study. Approaches are defined by ASSIST guidelines and divided into three categories: Deep, Surface and Strategic study approaches. Students participated by filling in questionaires relating to these 3 approaches by answering 1-5 (least agreeing - most agreeing). In addition, data contains a measure for each student’s attitude and achievements based on exam points.</p>
+<p>In preprocessing, questions were divided into <strong>Deep, Surface</strong> and <strong>Strategic</strong> groups and for each group mean was calculated for each student. Analysis dataset includes additional information on gender, attitude and exam points. Students who had 0 points from exam were excluded.</p>
+</div>
+<div id="data-analysis" class="section level3">
+<h3>Data analysis</h3>
+<div id="read-the-data-and-explore-it" class="section level4">
+<h4>Read the data and explore it</h4>
+<pre class="r"><code>data &lt;- read.csv('data/analysis_dataset.csv')
+head(data)</code></pre>
+<pre><code>##   gender age attitude points     deep  stra     surf
+## 1      F  53      3.7     25 3.583333 3.375 2.583333
+## 2      M  55      3.1     12 2.916667 2.750 3.166667
+## 3      F  49      2.5     24 3.500000 3.625 2.250000
+## 4      M  53      3.5     10 3.500000 3.125 2.250000
+## 5      M  49      3.7     22 3.666667 3.625 2.833333
+## 6      F  38      3.8     21 4.750000 3.625 2.416667</code></pre>
+<pre class="r"><code>dim(data)</code></pre>
+<pre><code>## [1] 166   7</code></pre>
+<pre class="r"><code>str(data)</code></pre>
+<pre><code>## 'data.frame':    166 obs. of  7 variables:
+##  $ gender  : Factor w/ 2 levels &quot;F&quot;,&quot;M&quot;: 1 2 1 2 2 1 2 1 2 1 ...
+##  $ age     : int  53 55 49 53 49 38 50 37 37 42 ...
+##  $ attitude: num  3.7 3.1 2.5 3.5 3.7 3.8 3.5 2.9 3.8 2.1 ...
+##  $ points  : int  25 12 24 10 22 21 21 31 24 26 ...
+##  $ deep    : num  3.58 2.92 3.5 3.5 3.67 ...
+##  $ stra    : num  3.38 2.75 3.62 3.12 3.62 ...
+##  $ surf    : num  2.58 3.17 2.25 2.25 2.83 ...</code></pre>
+<p><em>Data contains 7 variables (columns) from 166 observations (students, rows). All variables are numeric or integers except gender which has 2 factors (female or male).</em></p>
 <hr />
+</div>
+</div>
 </div>
 
 
