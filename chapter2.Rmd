@@ -81,4 +81,4 @@ plot_diagnostics2 <- plot(linear_attitude, which = c(1, 2, 5), par(mfrow = c(1,2
 
 ###Conclusions
 
-Overall power of the fitted models to explain points variablity is limited. Adjusted R^2^ is quite low for both models and residual errors remain quite high. Based on F-statistics p-value, and observation that attitude was the only significant variable associated with points, I propose that single regression model would be marginally better model to use for predicting student points and would give reasonable predictions while being simple.
+Overall power of the fitted models to explain points variablity is limited. Adjusted R^2^ is quite low for both models and residual errors remain quite high. Based on F-statistics p-value, and observation that attitude was the only significant variable associated with points, I propose that single regression model would be marginally better model to use for predicting student points and would give reasonable predictions while being simple. The better the attitude of a student is, the better exam points they are likely to have.
