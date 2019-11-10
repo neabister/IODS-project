@@ -78,6 +78,27 @@ plot_diagnostics2 <- plot(linear_attitude, which = c(1, 2, 5), par(mfrow = c(1,2
 ***QQ-plot:** Normality of errors is reasonable*  
 ***Leverage:** Indicates the impact of individual points on the fitted model. My model has reasonable leverage.*
 
+###Testing stepwise multiple regression
+
+I realized it would be slow to observe manually all possible variable combinations, so I looked for an automated one to ensure I find the best model. Here I test `ols_step_both_p` function from  `olsrr package`. It is selecting variables to the model based on their p values and the thresholds to include or exclude a variable can be manually adjusted (more information here <https://www.guru99.com/r-simple-multiple-linear-regression.html>.  
+
+```{r}
+library(olsrr)
+
+fit <- lm(points ~ factor(gender) + age + attitude + deep + stra + surf, data = data) 
+best <- ols_step_both_p(fit)
+best
+
+```
+
+###Best fit diagnostic plots
+
+```{r}
+best_fit <- lm(points ~ attitude + stra + age, data = data)
+summary(best_fit)
+best_fit_diagn <- plot(best_fit, which = c(1, 2, 5), par(mfrow = c(1,2)))
+
+```
 
 ###Conclusions
 
