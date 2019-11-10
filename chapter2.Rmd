@@ -62,14 +62,23 @@ linear_attitude <- lm(points ~ attitude, data = data)
 summary(linear_attitude)
 ```
 
-*By removing non-significant variables, also Adj. R^2^ is decreasing*  
+*By removing non-significant variables, Adj. R^2^ is marginally reducing, meaning that slightly less of the variance in **points** is explained by **attitude**. However, F-statistic p-value is also decreasing in a model with attitude variable alone, suggesting that the fit of a single regression model would be better for the data. Both of the models give relatively high residual std errors when compared to 1st and 3rd residual quantiles *  
 
 ###Diagnostic plots for multiple regression  
 
 `Residuals vs Fitted values`, `Normal QQ-plot and` and `Residuals vs Leverage` diagnostic plots produced.  
 
 ```{r}
-plot_diagnostics <- plot(linear_3_variables, which = c(1, 2, 5), par(mfrow = c(2,3)))
 
+plot_diagnostics2 <- plot(linear_attitude, which = c(1, 2, 5), par(mfrow = c(1,2)))
 
 ```
+
+***Residuals vs. Fitted values**: Reasonable constant variation of residual errors, graph should not show any patterns.*  
+***QQ-plot:** Normality of errors is reasonable*  
+***Leverage:** Indicates the impact of individual points on the fitted model. My model has reasonable leverage.*
+
+
+###Conclusions
+
+Overall power of the fitted models to explain points variablity is limited. Adjusted R^2^ is quite low for both models and residual errors remain quite high. Based on F-statistics p-value, and observation that attitude was the only significant variable associated with points, I propose that single regression model would be marginally better model to use for predicting student points and would give reasonable predictions while being simple.
