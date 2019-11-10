@@ -55,7 +55,8 @@ summary(linear_3_variables)
 ```
 
 *Attitude is the only significant variable to explain points.*  
-Fitting linear regression using only significant **attitude** variable:  
+
+###Fitting linear regression using only significant **attitude** variable  
 
 ```{r}
 linear_attitude <- lm(points ~ attitude, data = data)
@@ -64,7 +65,7 @@ summary(linear_attitude)
 
 *By removing non-significant variables, Adj. R^2^ is marginally reducing, meaning that slightly less of the variance in **points** is explained by **attitude**. However, F-statistic p-value is also decreasing in a model with attitude variable alone, suggesting that the fit of a single regression model would be better for the data. Both of the models give relatively high residual std errors when compared to 1st and 3rd residual quantiles *  
 
-###Diagnostic plots for multiple regression  
+###Diagnostic plots for single regression  
 
 `Residuals vs Fitted values`, `Normal QQ-plot and` and `Residuals vs Leverage` diagnostic plots produced.  
 
