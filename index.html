@@ -441,7 +441,12 @@ summary(best_fit)</code></pre>
 </div>
 <div id="conclusions" class="section level3">
 <h3>Conclusions</h3>
-<p>Overall power of the fitted models to explain points variablity is limited. Adjusted R<sup>2</sup> is quite low for both models and residual errors remain quite high. Based on F-statistics p-value, and observation that attitude was the only significant variable associated with points, I propose that single regression model would be marginally better model to use for predicting student points and would give reasonable predictions while being simple. The better the attitude of a student is, the better exam points they are likely to have.</p>
+<p>Overall power of the fitted models to explain points variablity is limited. Adjusted R<sup>2</sup> is quite low for all explored models and residual errors remain quite high. Based on F-statistics p-value, and observation that attitude was the only significant variable associated with points, single regression model could be sufficient model to use for rougly estimate student’s future achievements in exams. The better the attitude of a student is, the higher exam points they are likely to have which makes sense.<br />
+However, <code>olsrr</code> library function pinpointed a multiple regression model (<strong>attitude</strong>, <strong>stra</strong> and <strong>age</strong>) that explains points variation even better. Rough interpretation of this model:<br />
+1. Higher attitude -&gt; Higher points (positive correlation)<br />
+2. Higher strategic approach -&gt; Higher points (positive correlation)<br />
+3. Older age -&gt; Lower points (negative correlation)<br />
+4. Impact of these three variables on points is: attitude &gt; stra &gt; age</p>
 <hr />
 </div>
 </div>
