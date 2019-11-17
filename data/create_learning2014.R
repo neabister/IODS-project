@@ -32,6 +32,7 @@ for(i in colnames(analysis_dataset)) {
   colnames_lower <- c(colnames_lower, lower_case)
 }
 
+colnames_lower
 colnames(analysis_dataset) <- colnames_lower
 
 
@@ -49,6 +50,7 @@ surf_columns <- select(data_with_points, one_of(surf_questions))
 analysis_dataset$deep <- rowMeans(deep_columns)
 analysis_dataset$stra <- rowMeans(stra_columns)
 analysis_dataset$surf <- rowMeans(surf_columns)
+
 
 #Check that everything is right
 dim(analysis_dataset)

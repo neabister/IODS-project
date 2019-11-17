@@ -1,0 +1,4 @@
+#Chapter 3: Logistic regression
+
+
+This is Chapter 3 where we first prepare the data and fit logistic regression models on it.

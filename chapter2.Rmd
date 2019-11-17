@@ -1,4 +1,10 @@
-# Chapter 2: Regression and model validation  
+---
+output:
+  html_document:
+    css: styles.css
+---
+
+#Chapter 2: Regression and model validation {.tabset}
 
 In this exercise I analyze preprocessed data.  
 
@@ -15,9 +21,9 @@ Data is from Introduction to statistics course learning approaches study carried
 
 In preprocessing, questions were divided into **Deep, Surface** and **Strategic** groups and for each group mean was calculated for each student. Analysis dataset includes additional information on gender, attitude and exam points. Students who had 0 points from exam were excluded.  
 
-###Data analysis  
 
-####Read the data and explore it  
+##Read and explore data
+
 ```{r}
 data <- read.csv('data/analysis_dataset.csv')
 head(data)
@@ -28,7 +34,7 @@ str(data)
   
 *Data contains 7 variables (columns) from 166 observations (students, rows). All variables are numeric or integers except gender which has 2 factors (female or male).*  
 
-###Summary and graphical overview of the data  
+##Overview of the data  
 
 ```{r}
 summary(data)
@@ -41,11 +47,12 @@ library(GGally)
 p <- ggpairs(data, title = "Correlation summary graphs", mapping = aes(col = gender, alpha = 0.4), lower = list(combo = wrap('facethist', bins = 20)))
 
 p
+
 ```
 
 *Data contains more females than males but other variables are not dependent on gender. Participants age between 17-55. Gender independent **highest (positive) correlation is between points and attitude** (0.437) and **lowest (negative) correlation between points and deep learning approaches** (-0.0101). This could suggest that exams do not measure level of deep learning. However, points correlate best with strategic approaches (positive correlation), suggesting that focus on planning and scheduling could improve exam points.*
 
-###Linear regression fitting  
+##Multiple linear regression fitting  
 
 To try to explain target variable **points**, I selected 3 variables that had highest negative or positive correlation (**attitude**, **stra**, **surf**) with it and fitted linear regression.  
 
@@ -56,7 +63,7 @@ summary(linear_3_variables)
 
 *Attitude is the only significant variable to explain points.*  
 
-###Fitting linear regression using only significant **attitude** variable  
+##Single linear regression (attitude) 
 
 ```{r}
 linear_attitude <- lm(points ~ attitude, data = data)
@@ -65,7 +72,7 @@ summary(linear_attitude)
 
 *By removing non-significant variables, Adj. R^2^ is marginally reducing, meaning that slightly less of the variance in **points** is explained by **attitude**. However, F-statistic p-value is also decreasing in a model with attitude variable alone, suggesting that the fit of a single regression model would be better for the data. Both of the models give relatively high residual std errors when compared to 1st and 3rd residual quantiles *  
 
-###Diagnostic plots for single regression  
+##Diagnostic plots for single regression  
 
 `Residuals vs Fitted values`, `Normal QQ-plot and` and `Residuals vs Leverage` diagnostic plots produced.  
 
@@ -79,7 +86,7 @@ plot_diagnostics2 <- plot(linear_attitude, which = c(1, 2, 5), par(mfrow = c(1,2
 ***QQ-plot:** Normality of errors is reasonable*  
 ***Leverage:** Indicates the impact of individual points on the fitted model. My model has reasonable leverage.*
 
-###Testing stepwise multiple regression
+##Testing stepwise multiple regression
 
 I realized it would be slow to observe manually all possible variable combinations, so I looked for an automated one to ensure I find the best model. Here I test `ols_step_both_p` function from  `olsrr package`. It is selecting variables to the model based on their p values and the thresholds to include or exclude a variable can be manually adjusted (more information here <https://www.guru99.com/r-simple-multiple-linear-regression.html>.  
 
@@ -92,7 +99,7 @@ best
 
 ```
 
-###Best fit diagnostic plots
+##Best fit diagnostic plots
 
 ```{r}
 best_fit <- lm(points ~ attitude + stra + age, data = data)
@@ -101,7 +108,59 @@ best_fit_diagn <- plot(best_fit, which = c(1, 2, 5), par(mfrow = c(1,2)))
 
 ```
 
-###Conclusions
+##Comparison of different models
+
+Anova to check if one model is significantly better than other. Looks like best_fit model could be a bit better than attitude + sta + surf, although significant only at 0.1 level.
+
+```{r}
+anova <- anova(linear_3_variables, linear_attitude, best_fit)
+anova
+
+```
+
+Parameters from all three models in one table:
+
+```{r, results='hide'}
+library(stargazer)
+table <- stargazer(linear_3_variables, linear_attitude, best_fit, title='Results', type="html", align = TRUE)
+
+```
+
+`r paste(table, collapse = "")`
+
+
+##Multicollinearity detection
+
+`corrplot` to visualize correlations between different variables easily.
+
+```{r}
+library(corrplot)
+
+#Select only numeric columns
+drops <- c("gender")
+numeric_df <- data[ , !(names(data) %in% drops)]
+head(numeric_df)
+
+cor1 = cor(numeric_df)
+corrplot.mixed(cor1)
+
+```
+
+`mctest` and `ppcor` packages to test multicollinearity. Multicollinearity was detected between surf and deep. However, deep was not included in any of the regression models so this multicollinearity is not affecting the models.
+
+```{r}
+library(mctest)
+library(ppcor)
+
+omcdiag(numeric_df[,c(1:2,4:6)],numeric_df$points)
+imcdiag(numeric_df[,c(1:2,4:6)],numeric_df$points)
+pcor(numeric_df[,c(1:2,4:6)], method=c("pearson"))
+
+
+```
+
+
+##Conclusions
 
 Overall power of the fitted models to explain points variablity is limited. Adjusted R^2^ is quite low for all explored models and residual errors remain quite high. Based on F-statistics p-value, and observation that attitude was the only significant variable associated with points, single regression model could be sufficient model to use for rougly estimate student's future achievements in exams. The better the attitude of a student is, the higher exam points they are likely to have which makes sense.  
 However, `olsrr` library function pinpointed a multiple regression model (**attitude**, **stra** and **age**) that explains points variation even better. Rough interpretation of this model:  
