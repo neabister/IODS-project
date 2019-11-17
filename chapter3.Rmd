@@ -1,4 +1,103 @@
-#Chapter 3: Logistic regression
+---
+output:
+  html_document:
+    css: styles.css
+---
+
+#Chapter 3: Logistic regression analysis to predict alcohol consumption {.tabset}
+
+In this exercise I analyze preprocessed data.  
+
+###Link to preprocessing R script:  
+<https://github.com/neabister/IODS-project/blob/master/data/create_alc.R>
+  
+###Link to original data:  
+
+<https://archive.ics.uci.edu/ml/datasets/Student+Performance>
+  
+
+###Original data and preprocessing  
+
+Original data sets consist of students from Math (1) and Portuguese language (2) classes who answered to several questions to assess their economical, family and activity status, and variables related to studying and alcoholc consumption. In data pre-processing, individual students were identified based on combination of 13 variables and only students present in both datasets were selected.  
+
+Alcohol use was evaluated numerically, separately for weekdays and weekends. To quantify overall consumption, average for these 2 variables was calculated into column `alc_use`. To group students into high and low alcohol use, threshold of 2 was applied to identify students with high alcohol use in a column `high_use`.
+
+###Data analysis
+
+##Read and explore the data
+
+```{r}
+data <- read.csv('data/create_alc.csv', sep=',')
+head(data)
+dim(data)
+str(data)
 
 
-This is Chapter 3 where we first prepare the data and fit logistic regression models on it.
+```
+
+Dataset has 35 variables and 382 observations (students). Data describes several background informations collected from students attending both math and portuguese language.
+
+##Personal hypothesis prior to analysis
+
+Four interesting variables that could predict high alcohol consumption:
+
+1.  absences
+    + High alcohol use could lead to more absences
+2.  Pstatus (together, apart)
+    + Perhaps problematic alcohol use could be more likely in broken families
+3.  sex
+    + Male gender could predispose to high alcohol use
+4.  goout
+    + Could lead to higher alcohol use (being problematic use or not) because students going out often involves alcohol
+    
+```{r}
+interesting_variables <- c('absences', 'Pstatus', 'sex', 'goout', 'high_use')
+```
+
+##Graphical data exploration & Summary statistics
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gridExtra)
+
+interesting <- select(data, one_of(interesting_variables))
+gather(interesting) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar()
+
+sex_plot <- ggplot(interesting, aes(sex, fill = high_use))
+p1 <- sex_plot + geom_bar(position = 'dodge') + ggtitle('Sex')
+
+Pstatus_plot <- ggplot(interesting, aes(Pstatus, fill = high_use))
+p2 <- Pstatus_plot + geom_bar(position = 'dodge') + ggtitle('Pstatus')
+
+absences_plot <- ggplot(interesting, aes(x = high_use, y = absences, col = sex))
+p3 <- absences_plot + geom_boxplot() + ylab("Number of absences") + ggtitle('Absences')
+
+goout_plot <- ggplot(interesting, aes(x = high_use, y = goout, col = sex))
+p4 <- goout_plot + geom_boxplot() + ylab("Going out") + ggtitle('Go out')
+
+grid.arrange(p1, p2, p3, p4, nrow=2)
+
+```
+
+Findings:  
+1.  *Sex*: Larger fraction of male students have high alcohol consumption than female. Initial hypothesis would hold true.  
+2.  *Parents together/separated*: Most of the parents are together. Hard to say from the plot if fraction of student with high alcohol consumption would be found in separated families (effect is not as dramatic as with sex).  
+3.  *Absences*: Data is quite spread especially among female students. Trend of more absences in high alcohol use is clearer in males.  
+4.  *Go out*: Again positive correlation between going out and high alcohol use, which again clearer in male students.  
+
+My hypotheses are not completely useless at least.
+
+###Summary statistics by group
+
+Below is table showing mean values for `absences` and `goout` between low and high alcohol use, separately for male and female students.
+It seems that both measured variables have higher mean value in high alcohol use group than in low use, this is true for both sexes. However, difference may not be statistically significant (based on how plots look above). Anyway, these variables may have some predictive power for logistic model.
+
+```{r}
+
+interesting %>% group_by(sex, high_use) %>% summarise(count = n(), mean_absences = mean(absences), mean_goout = mean(goout))
+
+
+```
+
