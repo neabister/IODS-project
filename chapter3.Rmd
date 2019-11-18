@@ -89,7 +89,7 @@ Findings:
 
 My hypotheses are not completely useless at least.
 
-###Summary statistics by group
+##Summary statistics by group
 
 Below is table showing mean values for `absences` and `goout` between low and high alcohol use, separately for male and female students.
 It seems that both measured variables have higher mean value in high alcohol use group than in low use, this is true for both sexes. However, difference may not be statistically significant (based on how plots look above). Anyway, these variables may have some predictive power for logistic model.
@@ -100,4 +100,81 @@ interesting %>% group_by(sex, high_use) %>% summarise(count = n(), mean_absences
 
 
 ```
+
+##Logistic regression fitting
+
+```{r}
+model1 <- glm(high_use ~ sex + Pstatus + absences + goout, data = interesting, family = 'binomial')
+
+summary(model1)
+coef(model1)
+
+```
+
+1.  Sex, male: positive effect on high_use  
+2.  Pstatus, together: non-significant effect on high_use  
+3.  Absences: positive effect on high_use  
+4.  Go out: positive effect on high_use  
+  
+Deviance = measure of goodness of fit, higher number indicates worse fit  
+  - Null deviance = When only intercept is included to the model  
+  - Residual deviance = Includes all variables in the model -> Residual deviance is a bit lower than null 
+
+AIC = compare different models, lower is better
+
+##Odds ratio and confidence intervals
+
+```{r}
+OR <- coef(model1) %>% exp
+CI <- confint(model1) %>% exp
+
+cbind(OR, CI)
+
+```
+
+Odds ratio >1 implies increased likelyhood that student's consumption of alcohol is high. If 1 is included in the CI, it means that interval spans from below 1 to more than 1 and the variable has no predictive power on dependent variable. Thus, from CI and OR table can be concluded that male sex and going out increase the likelyhood that person's alcohol consumption is high. Absences seem to have small effect whereas Pstatus does not have effect on alcohol consumtpion (also seen from model summary where this variable is the only one that is not significant).
+
+##Analysis of predictive power
+
+Since Pstatus was not significant variable, I will fit a new model (`model2`) without it and evaluate how well it predicts high_use in this same data set.
+First I am calculating probabilities of high_use with the `model2` and appending this information in dataframe `interesting` that contains all my interesting variables. Additionally, I am generating a column for prediction of high_use that gets value `TRUE` if probability is >0.5 and `FALSE` if <0.5.
+
+
+```{r}
+model2 <- glm(high_use ~ sex + absences + goout, data = interesting, family = 'binomial')
+
+probabilities <- predict(model2, type = 'response')
+
+interesting <- mutate(interesting, probability = probabilities)
+
+interesting <- mutate(interesting, predicted_high_use = probability > 0.5)
+
+head(interesting)
+
+```
+
+To assess model's prediction power, I am checking how often prediction and real values are matching
+
+```{r}
+table(high_use = interesting$high_use, prediction = interesting$predicted_high_use)
+```
+
+###Visualizing 
+
+```{r}
+g <- ggplot(interesting, aes(x = probability, y = high_use, col = predicted_high_use))
+g + geom_point()
+
+```
+
+```{r}
+# tabulate the target variable versus the predictions
+table(high_use = interesting$high_use, prediction = interesting$predicted_high_use) %>% prop.table %>% addmargins
+
+sensitivity <- 0.1283 / 0.2984 * 100
+specificity <- 0.6623 / 0.7016 * 100
+
+```
+
+Model sensitivity is `r sensitivity` % and specificity `r specificity` %, meaning that it is not predicting false positives too easily but is more vulnerable to miss true positives (predicts more false negatives).
 
