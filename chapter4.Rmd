@@ -4,7 +4,7 @@ output:
     css: styles.css
 ---
 
-#Chapter 4: Clustering {.tabset}
+#Chapter 4: Classification and clustering {.tabset}
 
 In this exercise I analyze `Boston`data set available in `MASS` package. 
 
@@ -34,7 +34,7 @@ Nice corrplot modification examples <https://cran.r-project.org/web/packages/cor
 ```{r, message=FALSE}
 library(corrplot)
 library(RColorBrewer)
-#pairs(Boston)
+
 
 correlations <- cor(Boston)
 round(correlations, digits = 2)
@@ -124,8 +124,6 @@ library(ggord)
 
 cols <- pal_aaas()(4)
 
-#color vector corresponding to levels of crimes in lda
-cols_crimes <- cols[crime_levels]
 
 #Plot with nicer colors
 
@@ -135,5 +133,124 @@ ggord(lda_fit, train_set$crime, poly = FALSE, arrow=.3, veclsz = .5, vec_ext = 4
 
 There are so many variables in the model, that the arrows look a bit messy. However, it is easy to see still which variables affect the classification most (zn, rad, nox). This `ggord` package was very nice and easy to use. You can see that the model does not classify crime rates perfectly but I would say it does pretty good job distinguishing `high` crime rate from others in `train_set`.
 
+##Test model
 
+First need to create dataframe with correct crime classes for the test data and remove crime variable from test data that is used to predict the classes with the `lda_fit`.
 
+```{r}
+#Save correct classes to variable
+correct_classes <- test_set$crime
+
+#Remove classes from test data
+test_set <- dplyr::select(test_set, -crime)
+
+#Predict classes with model
+lda_predict <- predict(lda_fit, newdata = test_set)
+
+#Make 2X2 table to observe model accuracy
+
+table(correct = correct_classes, predicted = lda_predict$class)
+
+#Calculate percentage of right predictions on test data
+percent_correct <- 100 * mean(lda_predict$class==correct_classes)
+percent_correct <- round(percent_correct, digits = 0)
+
+percent_correct
+
+```
+
+Above analysis of the model shows, that it predicted the crime class for `r percent_correct` % of `test_set` data correctly. Prediction accuracy is 100 % for high crime rate but less accurate for lower crime level classes. The worst accuracy is for med_low crime rate where almost half of the test data was classified wrong.
+
+##K-means clustering
+
+I am reading again `Boston` data set and scaling it for clustering by K-means.
+First I am calculating Euclidean distances:
+
+```{r}
+data(Boston)
+scaled_kmeans <- as.data.frame(scale(Boston))
+eu_dist <- dist(scaled_kmeans)
+summary(eu_dist)
+
+```
+
+Next I am running k-means clustering using defined seed:
+
+```{r, message=FALSE}
+library(ggplot2)
+set.seed(123)
+
+#Setting maximum number of clusters
+max_seeds <- 10
+
+#Finding optimal number of clusters with so called elbow method
+twcss <- sapply(1:max_seeds, function(k) {kmeans(scaled_kmeans, k)$tot.withinss})
+qplot(x = 1:max_seeds, y = twcss, geom = 'line')
+
+```
+
+I decided to use 3 clusters because `twcss` is still decreasing and I was not satisfied how 2 or more than 3 clusters looked like (I tested 2, 4 and 8 clusters).
+
+```{r}
+set.seed(123)
+km <- kmeans(scaled_kmeans, centers = 3)
+
+cols <- pal_futurama()(3)
+cols_clusters <- cols[km$cluster]
+pairs(scaled_kmeans, col = cols_clusters)
+
+```
+
+##Bonus: LDA using k-means clusters
+
+Fitting `lda()` using k-means clusters as dependent variables and all variables in data set as explanatory variables. Data used is scaled Boston data.
+
+```{r}
+lda_kmeans <- lda(km$cluster ~ ., data = scaled_kmeans)
+lda_kmeans
+
+```
+
+To visualize fitted model, I use again `ggord` function. For it to work, `km$cluster`s need to be converted to `factor()` because it can't be in numeric form for this function. Using same colors as before.
+
+```{r}
+cols <- pal_aaas()(3)
+
+ggord(lda_kmeans, factor(km$cluster), poly = FALSE, arrow=.3, veclsz = .5, vec_ext = 4, size=1, cols = cols)
+
+```
+
+All 3 clusters can be separated quite nicely from each other, although only cluster 2 is clearly distinct from two others. Clustering is anyway better than clusters for crime rates as target classes. In this model, the most influential variables are `tax`, `rad` and `age`. However, it was clear that everytime k-means is executed, the clusters formed will be different making the interpretation and meaning of different clusters quite difficult.  
+
+Below is shown LDA for k-means with 6 clusters and this shows `crim` and `black` as most influential variables but not all cluster separate nicely based on `LD1` and `LD2` that explain around 70 % of effect.
+
+```{r}
+#6 clusters
+
+set.seed(123)
+km6 <- kmeans(scaled_kmeans, centers = 6)
+
+lda_kmeans6 <- lda(km6$cluster ~ ., data = scaled_kmeans)
+
+cols <- pal_aaas()(6)
+
+ggord(lda_kmeans6, factor(km6$cluster), poly = FALSE, arrow=.3, veclsz = .5, vec_ext = 4, size=1, cols = cols)
+
+```
+
+##Super-bonus
+
+```{r, message=FALSE}
+model_predictors <- dplyr::select(train_set, -crime)
+# check the dimensions
+dim(model_predictors)
+dim(lda_fit$scaling)
+# matrix multiplication
+matrix_product <- as.matrix(model_predictors) %*% lda_fit$scaling
+matrix_product <- as.data.frame(matrix_product)
+
+#Next, install and access the plotly package. Create a 3D plot (Cool!) of the columns of the matrix product by typing the code below.
+library(plotly)
+plot_ly(x = matrix_product$LD1, y = matrix_product$LD2, z = matrix_product$LD3, type= 'scatter3d', mode='markers', color = train_set$crime)
+
+```
