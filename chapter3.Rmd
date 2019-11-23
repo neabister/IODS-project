@@ -56,7 +56,7 @@ interesting_variables <- c('absences', 'Pstatus', 'sex', 'goout', 'high_use')
 
 ##Graphical data exploration & Summary statistics
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -178,3 +178,121 @@ specificity <- 0.6623 / 0.7016 * 100
 
 Model sensitivity is `r sensitivity` % and specificity `r specificity` %, meaning that it is not predicting false positives too easily but is more vulnerable to miss true positives (predicts more false negatives).
 
+##Step-wise best model selection
+
+Since 4 interesting variables were chosen quite randomly in the first place, I want to explore options to find the best model more automatically. Here I will use `step()` function to test models with different variables included.
+
+```{r}
+#select all except Dalc and Walc
+variables_for_step <- dplyr::select(data, -Dalc, -Walc)
+#select independent variables (all except alc_use which are two last columns)
+names_variables <- colnames(variables_for_step)
+variables_used <- names_variables[seq_len(length(names_variables)-2)]
+
+#Constructing formula to use for step-wise model search
+Formula <- formula(paste("high_use ~ ", paste(variables_used, collapse=" + ")))
+
+```
+
+Running `step()` function with build `Formula`. It takes some time and output is very long so output is hidden.
+
+```{r, results='hide'}
+model3 <- glm(Formula, data = variables_for_step, family = 'binomial')
+step(model3, direction = "backward")
+
+```
+
+Below is the function with lowest AIC found by `step()`
+
+```{r}
+#Final best fit variables
+model_best <- glm(high_use ~ sex + address + Fjob + traveltime + studytime + paid + activities + famrel + freetime + goout + absences, family = "binomial",
+    data = variables_for_step)
+
+```
+
+##Compare 3 logistic models
+
+I have fitted three models: `model1`, `model3`, `model_best` and wanted to compare these to each other with `anova` and collect model parameters in one `table`.
+
+```{r}
+anova <- anova(model_best, model1, model2)
+anova
+
+```
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(stargazer)
+table <- stargazer(model_best, model1, model2, title='Comparison of logistic regression models', type="html", align = TRUE)
+
+```
+
+`r paste(table, collapse = "")`
+
+Based on Residual Deviances and AIC, `best_model` would be the best fit. However, it is quite complex including 15 variables so I want to see how much better it actually performs.  
+Predicting `high_use` with 3 models:  
+
+```{r}
+
+
+probabilities1 <- predict(model1, type = 'response')
+probabilities2 <- predict(model2, type = 'response')
+probabilities_model_best <- predict(model_best, type = 'response') 
+
+predictions_3_models <- mutate(variables_for_step, probability_model1 = probabilities1, probability_model2 = probabilities2, probability_best = probabilities_model_best)
+
+predictions_3_models <- mutate(predictions_3_models, predicted_high_use_m1 = probability_model1 > 0.5, predicted_high_use_m2 = probability_model2 > 0.5, 
+                               predicted_high_use_best = probability_best > 0.5)
+
+```
+
+###2x2 tables for models
+
+```{r}
+
+model1_table <- table(high_use = predictions_3_models$high_use, prediction_model1 = predictions_3_models$predicted_high_use_m1) %>% prop.table %>% addmargins
+model2_table <- table(high_use = predictions_3_models$high_use, prediction_model2 = predictions_3_models$predicted_high_use_m2) %>% prop.table %>% addmargins
+best_model_table <- table(high_use = predictions_3_models$high_use, prediction_best_model = predictions_3_models$predicted_high_use_best) %>% prop.table %>% addmargins
+
+model1_table
+model2_table
+best_model_table
+
+# Calculate sensitivity and specificity for all models 
+sensitivity_m1 <- 0.1283 / 0.2984 * 100
+specificity_m1 <- 0.6623 / 0.7016 * 100
+
+
+sensitivity_m2 <- 0.1283 / 0.2984 * 100
+specificity_m2 <- 0.6623 / 0.7016 * 100
+
+sensitivity_best <- 0.1518 / 0.2984 * 100
+specificity_best <- 0.6545 / 0.7016 * 100
+
+#Collect accuracy parameters in one df
+model_accuracy <- data.frame("Model" = c('Model 1', 'Model 2', 'Best model'), "Sensitivity" = c(sensitivity_m1, sensitivity_m2, sensitivity_best), "Specificity" = c(specificity_m1, specificity_m2, specificity_best))
+
+print(model_accuracy, digits = 3)
+
+```
+
+###Graphical visualization of models
+
+```{r, message=FALSE, warning=FALSE}
+#Nice examples for plot arrangements http://www.sthda.com/english/wiki/wiki.php?id_contents=7930
+library(cowplot)
+m1_plot <- ggplot(predictions_3_models, aes(x = probability_model1, y = high_use, col = predicted_high_use_m1))
+m2_plot <- ggplot(predictions_3_models, aes(x = probability_model2, y = high_use, col = predicted_high_use_m2))
+best_plot <- ggplot(predictions_3_models, aes(x = probability_best, y = high_use, col = predicted_high_use_best))
+
+g1 <- m1_plot + geom_point() + ggtitle('Model 1')
+g2 <- m2_plot + geom_point() + ggtitle('Model 2')
+g3 <- best_plot + geom_point() + ggtitle('Best model')
+
+plot_grid(g1, g2, g3, labels=c("A", "B", "C"), ncol = 1, nrow = 3)
+
+```
+
+##Conclusions
+
+Selection of a model is always a trade of between specificity, sensitivity and complexity of the model. If we allow more complex model, I would select `best_model` because of significantly improved **sensitivity** compared to other models, even if there is slight drop in **specificity**.
