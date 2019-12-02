@@ -1,3 +1,5 @@
+library(stringr)
+library(dplyr)
 #human developmental index -> life achievements
 hd <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human_development.csv", stringsAsFactors = F)
 
@@ -33,11 +35,40 @@ joined_data <- inner_join(gii_data, hdi_data, by = c('Country'))
 dim(joined_data)
 head(joined_data)
 
-#Save data
-write.csv(joined_data, 'data/human.csv', row.names = FALSE)
 
+#CHAPTER 5 DATA WRANGLING STARTS FROM HERE
 
-#Test read
-test <- read.csv('data/human.csv')
-head(test)
-dim(test)
+#Transform GNI column to numeric (making new column named GNI)
+joined_data <- mutate(joined_data, GNI = str_replace(joined_data$Gross.National.Income..GNI..per.Capita, pattern = ',', replace = '') %>% as.numeric)
+#Checking it looks like it should
+joined_data$GNI
+dim(joined_data)
+
+#Exclude extra columns
+
+cols_to_keep <- c('Country', 'edu2_FM_ratio', 'lab_FM_ratio', 'Expected.Years.of.Education', 'Life.Expectancy.at.Birth', 'GNI', 'Maternal.Mortality.Ratio',
+                  'Adolescent.Birth.Rate', 'Labour.Force.Participation.Rate..Female.')
+data_columns <- dplyr::select(joined_data, which=one_of(cols_to_keep))
+
+#Rename columns with shorter names (because didnt understand earlier to do it...)
+names(data_columns) <- c('Country', 'Edu2.FM', 'Labo.FM', 'Edu.Exp', 'Life.Exp', 'GNI', 'Mat.Mor', 'Ado.Birth', 'Parli.F')
+
+#Remova NAs
+
+complete_data <- filter(data_columns, complete.cases(data_columns) == TRUE)
+
+#Remove regions, I assume the only regions are the last 7 as was shown in DataCamp exercise... I dont think there is a good way to figure them out
+#Other than just going through one by one...
+
+last_7 <- nrow(complete_data) - 7
+complete_data <- complete_data[1:last_7,]
+dim(complete_data)
+
+#Countries as rownames
+
+rownames(complete_data) <- complete_data$Country
+complete_data <- dplyr::select(complete_data, -Country)
+
+dim(complete_data)
+
+#For reason I don't understand, I seem to have one extra row in final data... thus, I will use the ready made data for the analysis.

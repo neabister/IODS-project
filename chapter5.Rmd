@@ -1,0 +1,95 @@
+---
+output:
+  html_document:
+    css: styles.css
+---
+
+
+#Chapter 5: Dimensionality reduction techniques {.tabset}
+
+##Import libraries, read and visualize data
+```{r, message=FALSE}
+library(ggplot2)
+library(GGally)
+library(corrplot)
+library(dplyr)
+library(RColorBrewer)
+
+colors <- brewer.pal(n = 9, name = "Pastel1")
+
+data <- read.csv('http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human2.txt', sep=',')
+dim(data)
+str(data)
+summary(data)
+
+ggpairs(data)
+corr_matrix <- cor(data) 
+corrplot(corr_matrix, type = 'upper', method = 'ellipse', order = "hclust", col = brewer.pal(n = 8, name = "PiYG"), bg = colors[length(colors)], 
+         tl.col = "black", tl.srt = 90)
+
+```
+
+There seems to be quite high correlation between `GNI` and other variables except `Parli.F` and `Labo.FM` which are poorly correlated with any other variable.
+
+##PCA - scaled vs non-scaled variables
+
+PCA with non-standardized variables is not informative because variables with very different scales have very high and biased impact on the clustering. It can be seen that now `GNI`variable would explain all the variance alone. Thus, analysis should be focused on standardized data when the means and standard deviations of different variables has been transformed to same scale.
+
+```{r, warning=FALSE}
+
+pca <- prcomp(data)
+pca_scaled <- scale(data) %>% prcomp
+
+summarypca <- summary(pca)
+summarypca_scaled <- summary(pca_scaled)
+
+procent <- round(1*summarypca$importance[2, ]*100, digits = 1)
+procent_scaled <- round(1*summarypca_scaled$importance[2, ]*100, digits = 1)
+
+labels <- paste0(names(procent), " (", procent, "%)")
+labels_scaled <- paste0(names(procent_scaled), " (", procent_scaled, "%)")
+
+layout(matrix(1:2, ncol=2))
+biplot(pca, choices = 1:2, col = c('black', 'purple'), cex = c(0.8, 1), xlab = labels[1], ylab = labels[2], main = 'Non-standardized')
+biplot(pca_scaled, choices = 1:2, col = c('black', 'purple'), cex = c(0.8, 1), xlab = labels_scaled[1], ylab = labels_scaled[2], main = 'Standardized variables')
+
+```
+
+```{r}
+summary(pca_scaled)
+pca_scaled
+
+screeplot(pca_scaled, type="lines", main = 'Scaled variables Screeplot')
+```
+
+It can be seen that almost 70 % of variance is explained by first 2 principal components. `screeplot()` shows too that data is best explained with two clusters. As already evident from observations from correlation data, it can be seen that `Parli.F` and `Labo.FM` are highly contributing to PC2, while other variables are highly explaining PC1.
+
+##MCA
+
+This part of the exercise is not fully finished because lack of time...
+
+´tea´ dataset from `FactoMineR´ package consists of factor variables (all except age which is integer). I will select all but age as variables for further analysis (age_Q will be included)
+
+```{r, message=FALSE}
+library(FactoMineR)
+library(tidyr)
+
+data(tea)
+
+str(tea)
+summary(tea)
+
+tea_data <- dplyr::select(tea, -age)
+```
+
+```{r, message=FALSE}
+gather(tea_data) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+```{r}
+mca <- MCA(tea_data, graph = FALSE)
+summary(mca)
+
+plot(mca, invisible=c('ind'))
+
+```
