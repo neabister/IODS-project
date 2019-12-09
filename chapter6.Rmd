@@ -7,9 +7,14 @@ output:
 
 #Chapter 6: Analysis of longidutinal data {.tabset}
 
+In this chapter I am analyzing two longitudinal studies. First one, `RATS`, is investigating weight differences between 3 distinct groups over time. Second, `BPRS`, is comparing 2 different treatments effect on psychiatric evaluation outcome of subjects.
+  
+Data wrangling R script for this is exercise is found from here:  
+<https://github.com/neabister/IODS-project/blob/master/data/meet_and_repeat.R>
+
 ##Import libraries, read and visualize data
 
-Data wrangling 
+First datasets are read from wrangling file and variables for subject/ID and treatment/group are converted back to factors for the analysis.
 
 ```{r, message=FALSE}
 library(ggplot2)
@@ -20,13 +25,16 @@ bprs_data <- read.csv('data/BPRSL.csv')
 
 rats_data$ID <- factor(rats_data$ID)
 rats_data$Group <- factor(rats_data$Group)
+bprs_data$subject <- factor(bprs_data$subject)
+bprs_data$treatment <- factor(bprs_data$treatment)
 
 glimpse(rats_data)
 
+glimpse(bprs_data)
 
 ```
 
-##RATS data set analysis
+##RATS - Graphical display and Summary Measure Analysis
 
 ###Lineplot of the longitudinal values separated for all 3 groups
 
@@ -178,4 +186,33 @@ anova(fit)
 
 ```
 
-##BPRS data
+##BPRS data - Linear Mixed Effects Models for Normal Response Variables
+
+First we will just plot the BPRS data, ignoring the repeated measures -caused dependencies and see how it looks to fit basic linear regression to later demonstrate the difference from methods for repeated measures data.
+
+```{r}
+p1 <- ggplot(bprs_data, aes(x = week, y = bprs, group = subject))
+p2 <- p1 + geom_point(aes(color = treatment))
+p3 <- p2 + scale_x_continuous(name = "Week")
+p4 <- p3 + scale_y_continuous(name = "Bprs")
+p5 <- p4 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p5
+
+
+```
+
+Lineplot to show individual rats profiles over time
+
+```{r}
+ggplot(bprs_data, aes(x = week, y = bprs, linetype = subject)) + geom_line(aes(color = treatment))
+
+```
+
+By initial observation there is no clear pattern of values with certain treatment but the measurements are overlapping. There might be one outlier in week 1 time-point, since one value is much higher than others in any timepoint.
+
+```{r}
+bprs_lm <- lm(bprs ~ week + treatment, data = bprs_data)
+summary(bprs_lm)
+
+```
+
