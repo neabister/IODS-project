@@ -1,0 +1,181 @@
+---
+output:
+  html_document:
+    css: styles.css
+---
+
+
+#Chapter 6: Analysis of longidutinal data {.tabset}
+
+##Import libraries, read and visualize data
+
+Data wrangling 
+
+```{r, message=FALSE}
+library(ggplot2)
+library(dplyr)
+
+rats_data <- read.csv('data/RATSL.csv')
+bprs_data <- read.csv('data/BPRSL.csv')
+
+rats_data$ID <- factor(rats_data$ID)
+rats_data$Group <- factor(rats_data$Group)
+
+glimpse(rats_data)
+
+
+```
+
+##RATS data set analysis
+
+###Lineplot of the longitudinal values separated for all 3 groups
+
+```{r}
+
+ggplot(rats_data, aes(x = day, y = weight, linetype = ID)) + geom_line() + scale_linetype_manual(values = rep(1:10, times=4)) + facet_grid(. ~ Group, labeller = label_both) + theme(legend.position = "none") + scale_y_continuous(limits = c(min(rats_data$weight), max(rats_data$weight)))
+
+```
+
+Above graphs show that all Groups have one rat that is different from others, possibly outliers. This is clearest in Group 2. It can be seen also that overall Group 1 weights are much lower than Group 2 and 3 from start until the end. Furthermore, it can be seen that the weights are increasing in time in all groups but perhaps there could be diferences in the rate of increase (slope)...
+
+###Same from standardized data
+
+
+```{r}
+n <- rats_data$day %>% unique() %>% length()
+
+rats_data <- rats_data %>% group_by(day) %>% mutate(stdardized = (weight - mean(weight))/sd(weight)) %>% ungroup()
+
+# Summary data with mean and standard error of bprs by treatment and week 
+rats_data_summary <- rats_data %>%
+  group_by(Group, day) %>%
+  summarise(mean = mean(stdardized), se = sd(stdardized)/sqrt(n) ) %>%
+  ungroup()
+
+glimpse(rats_data_summary)
+
+ggplot(rats_data_summary, aes(x = day, y = mean, col=Group)) +
+  geom_line() +
+  geom_point(size=3) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width=0.3) +
+  scale_y_continuous(name = "mean(standardized weight) +/- se(standardized weight)")
+
+
+```
+
+Scaling visibly reduced tracking.
+
+###Grouped plot (mean + SEM)
+
+```{r}
+
+ggplot(rats_data, aes(x = day, y = stdardized, col = Group)) +
+geom_boxplot() +  scale_y_continuous(limits = c(min(rats_data$stdardized), max(rats_data$stdardized)))
+```
+
+###Barplots side by side to evaluate outliers
+
+```{r}
+p1 <- ggplot(rats_data, aes(x = factor(day), y = weight, col = Group))
+p2 <- p1 + geom_boxplot(position = position_dodge(width = 0.9))
+p3 <- p2 + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p4 <- p3 + scale_x_discrete(name = "day")
+
+p4
+
+```
+
+###Outlier removal
+
+From previous tab bar plot it can be seen that all three groups have one outlier value present in almost all timepoint, if not in all. Next, I will try and remove these outliers.
+
+```{r}
+#Filter each group to their own df
+
+group_1 <- rats_data %>% filter(Group == 1)
+group_2 <- rats_data %>% filter(Group == 2)
+group_3 <- rats_data %>% filter(Group == 3)
+
+n_1 <- group_1$ID %>% unique() %>% length()
+n_2 <- group_2$ID %>% unique() %>% length()
+n_3 <- group_3$ID %>% unique() %>% length()
+
+n_1
+n_2
+n_3
+
+
+#Print summaries to see lowest and highest values for each group to decide the limits for outlier, trying with 1st or 3rd quartile for lowest/upper limit
+summary(group_1)
+summary(group_2)
+summary(group_3)
+
+#Remove outliers by filtering
+group_1 <- group_1 %>% filter(weight > 255)
+group_2 <- group_2 %>% filter(weight < 511)
+group_3 <- group_3 %>% filter(weight > 513)
+
+n_1 <- group_1$ID %>% unique() %>% length()
+n_2 <- group_2$ID %>% unique() %>% length()
+n_3 <- group_3$ID %>% unique() %>% length()
+
+n_1
+n_2
+n_3
+
+
+#Bind back together
+no_outliers <- rbind(group_1, group_2, group_3)
+
+#Check how the plot looks now
+p1 <- ggplot(no_outliers, aes(x = factor(day), y = weight, col = Group))
+p2 <- p1 + geom_boxplot(position = position_dodge(width = 0.9))
+p3 <- p2 + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p4 <- p3 + scale_x_discrete(name = "day")
+
+p4
+```
+After trying to remove outliers with above method, it can be seen that we get rid of outliers in Group 1 but for other two groups it does not work. For Group 3, the 1st Quartile limit was not enough to remove the outlier and from Group 2 one sample was removed with 3rd Quartile limit. Since in Groups 2 and 3 the n number was already low (4) in the beginning, I suggest that detecting real outliers is not accurate enough to confidently remove any outliers from these groups. So I will continue by removing only one rat from Group 1, simply using filter on the original dataframe:
+
+```{r}
+
+no_outliers_rats <- rats_data %>% filter(weight >255)
+
+p1 <- ggplot(no_outliers, aes(x = factor(day), y = weight, col = Group))
+p2 <- p1 + geom_boxplot(position = position_dodge(width = 0.9))
+p3 <- p2 + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p4 <- p3 + scale_x_discrete(name = "day")
+
+p4
+
+```
+
+###lm fitting and Anova - NOT FINISHED 
+
+In the example for BPRS data, baseline was filtered out from the data and used as one of the variables in linear regression fitting. In this RATS data I am not sure if day 1 could be considered as baseline but I am going to do that anyway, since if it is not included to the model separately, it will give a result that there is significant difference between the groups even though it can be just because of the baseline (and I think that it is true).
+
+```{r}
+#Filter out baseline
+no_outliers_ratsS <- no_outliers_rats %>%
+  filter(day > 1) %>%
+  group_by(Group, ID) %>%
+  summarise(mean=mean(weight)) %>%
+  ungroup()
+glimpse(no_outliers_ratsS)
+
+#Add baseline column to the filtered data
+#baseline <- $week0
+#BPRSL8S2 <- BPRSL8S %>%
+ # mutate(baseline)
+
+
+no_outliers_ratsS <- no_outliers_rats %>% group_by(Group, ID) %>% summarise( mean=mean(weight) ) %>% ungroup()
+glimpse(no_outliers_ratsS)
+
+fit <- lm(mean ~ Group, data = no_outliers_ratsS)
+summary(fit)
+anova(fit)
+
+```
+
+##BPRS data
